@@ -1,11 +1,15 @@
+using System;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+public class Player : NetworkBehaviour
 {
     [Header("Component References")]
     [SerializeField] CharacterController characterController;
     [SerializeField] private Transform cameraTransform;
+    [SerializeField] private InputActionAsset inputActionAsset;
+    
     [Header("Player Movement Parameters")]
     [SerializeField] private Vector2 camSens;
     [SerializeField] private float gravity = -1.0f;
@@ -17,21 +21,38 @@ public class Player : MonoBehaviour
     GameObject lookDirection;
     private Vector3 moveInputDir;
     private Vector3 camRotateDir;
-    private Vector3 addVel;
+    private Vector3 addVel = Vector3.zero;
     private bool jumpPressed = false;
+    private PlayerInput playerInput;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
+    {
+        enabled = false;
+    }
+
+    public override void OnNetworkSpawn()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        lookDirection = new GameObject();
-        addVel = Vector3.zero;
+
+        lookDirection = new GameObject("lookDirection");
+        lookDirection.transform.SetParent(transform);
+        enabled = IsOwner;
+        if (IsOwner)
+        {
+            // cameraTransform = Camera.main.transform;
+            Debug.Log("Add Component");
+            cameraTransform = GameObject.Find("Main Camera").transform;
+            Camera.main.GetComponent<FollowTransform>().toFollow = transform;
+            Camera.main.GetComponent<FollowTransform>().enabled = true;
+            playerInput = gameObject.AddComponent<PlayerInput>();
+            playerInput.actions = inputActionAsset;
+        }
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        // standard analouge movement
+        // standard analouge lateral movement
         lookDirection.transform.eulerAngles = new Vector3(0, cameraTransform.eulerAngles.y, 0f);
         Vector3 forward = lookDirection.transform.TransformDirection(moveInputDir * moveVel);
         characterController.Move(forward * 1f);

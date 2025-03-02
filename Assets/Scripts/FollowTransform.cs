@@ -2,11 +2,12 @@ using UnityEngine;
 
 public class FollowTransform : MonoBehaviour
 {
-    [SerializeField] Transform toFollow;
+    [SerializeField] public Transform toFollow;
 
     // Update is called once per frame
     void Update()
     {
-        transform.position = toFollow.position;
+
+        if (toFollow) transform.position = toFollow.position;
     }
 }
