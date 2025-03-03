@@ -9,13 +9,17 @@ public class Player : NetworkBehaviour
     [SerializeField] CharacterController characterController;
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private InputActionAsset inputActionAsset;
-    
+
     [Header("Player Movement Parameters")]
     [SerializeField] private Vector2 camSens;
     [SerializeField] private float gravity = -1.0f;
     [SerializeField] private float jumpForce = 1.0f;
     [SerializeField] private float jumpDamping = 0.9f;
-    [SerializeField] private float moveVel = 0.8f;
+    [SerializeField] private float maxMoveVel = 0.8f;
+    [SerializeField] private float maxSlopeStep = 0.3f;
+    [SerializeField] private float startMoveVel = 0.2f;
+    [SerializeField] private float timeToMaxVel = 0.1f;
+    
 
     // globals
     GameObject lookDirection;
@@ -24,6 +28,7 @@ public class Player : NetworkBehaviour
     private Vector3 addVel = Vector3.zero;
     private bool jumpPressed = false;
     private PlayerInput playerInput;
+    private float timeMoving;
 
     void Awake()
     {
@@ -52,12 +57,26 @@ public class Player : NetworkBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        // standard analouge lateral movement
-        lookDirection.transform.eulerAngles = new Vector3(0, cameraTransform.eulerAngles.y, 0f);
-        Vector3 forward = lookDirection.transform.TransformDirection(moveInputDir * moveVel);
-        characterController.Move(forward * 1f);
+        // calculate current movement speed
+        if (moveInputDir != Vector3.zero) timeMoving += Time.deltaTime;
+        else timeMoving = 0;
 
-        // slight "gravity" to fight character controller
+        // standard analouge lateral movement
+        float curMoveVel = startMoveVel + Mathf.SmoothStep(0, maxMoveVel - startMoveVel, timeMoving / timeToMaxVel);
+        lookDirection.transform.eulerAngles = new Vector3(0, cameraTransform.eulerAngles.y, 0f);
+        Vector3 forward = lookDirection.transform.TransformDirection(moveInputDir);
+
+        // snap to slope/ground
+        RaycastHit rh;
+        Physics.Raycast(transform.position, Vector3.down, out rh, characterController.height / 2f + maxSlopeStep, LayerMask.GetMask("Default"));
+        Vector3 tangent = Vector3.Cross(rh.normal, forward);
+        // adjust movement to ground normal only if we are on the ground
+        if (rh.collider != null) forward = -Vector3.Cross(rh.normal, tangent);
+
+        // move controller
+        characterController.Move(forward * curMoveVel);
+
+        // slight "gravity" to update character controller
         characterController.Move(new Vector3(0, -0.01f, 0));
 
         // actual gravity

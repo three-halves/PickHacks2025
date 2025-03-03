@@ -168,10 +168,13 @@ MonoBehaviour:
   cameraTransform: {fileID: 0}
   inputActionAsset: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   camSens: {x: 1, y: -1}
-  gravity: -0.025
-  jumpForce: 0.5
-  jumpDamping: 0.9
-  moveVel: 0.8
+  gravity: -0.027
+  jumpForce: 0.48
+  jumpDamping: 0.85
+  maxMoveVel: 0.7
+  startMoveVel: 0.2
+  timeToMaxVel: 0.2
+  snapDistance: 0.2
 --- !u!143 &2301102991864088957
 CharacterController:
   m_ObjectHideFlags: 0
@@ -192,8 +195,8 @@ CharacterController:
   serializedVersion: 3
   m_Height: 2
   m_Radius: 0.5
-  m_SlopeLimit: 45
+  m_SlopeLimit: 60
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
+  m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0, z: 0}
