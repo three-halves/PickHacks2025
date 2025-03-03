@@ -9,6 +9,7 @@ public class Player : NetworkBehaviour
     [SerializeField] CharacterController characterController;
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private InputActionAsset inputActionAsset;
+    [SerializeField] private GameObject shootPrefab;
 
     [Header("Player Movement Parameters")]
     [SerializeField] private Vector2 camSens;
@@ -20,7 +21,6 @@ public class Player : NetworkBehaviour
     [SerializeField] private float startMoveVel = 0.2f;
     [SerializeField] private float timeToMaxVel = 0.1f;
     
-
     // globals
     GameObject lookDirection;
     private Vector3 moveInputDir;
@@ -29,10 +29,16 @@ public class Player : NetworkBehaviour
     private bool jumpPressed = false;
     private PlayerInput playerInput;
     private float timeMoving;
+    private float curMoveVel;
 
     void Awake()
     {
         enabled = false;
+    }
+
+    public float GetDotVel()
+    {
+        return curMoveVel;
     }
 
     public override void OnNetworkSpawn()
@@ -62,7 +68,7 @@ public class Player : NetworkBehaviour
         else timeMoving = 0;
 
         // standard analouge lateral movement
-        float curMoveVel = startMoveVel + Mathf.SmoothStep(0, maxMoveVel - startMoveVel, timeMoving / timeToMaxVel);
+        curMoveVel = startMoveVel + Mathf.SmoothStep(0, maxMoveVel - startMoveVel, timeMoving / timeToMaxVel);
         lookDirection.transform.eulerAngles = new Vector3(0, cameraTransform.eulerAngles.y, 0f);
         Vector3 forward = lookDirection.transform.TransformDirection(moveInputDir);
 
@@ -119,6 +125,18 @@ public class Player : NetworkBehaviour
     public void OnJump(InputValue value)
     {
         jumpPressed = value.isPressed;
+    }
+
+    public void OnAttack(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            // spawn pill object
+            var shoot = Instantiate(shootPrefab);
+            var shootNetworkObject = shoot.GetComponent<NetworkObject>();
+            shootNetworkObject.Spawn();
+            shootNetworkObject.GetComponent<Pill>().SetupServerRpc(OwnerClientId, transform.position, cameraTransform.forward, curMoveVel + 5f);
+        }
     }
 
 }
